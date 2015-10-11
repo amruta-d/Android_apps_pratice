@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Just Java</string>
+    <string name="toppings">Toppings</string>
+    <string name="Quantity">Quantity</string>
+    <string name="quantity_plus">+</string>
+    <string name="value_of_quantity">0</string>
+    <string name="quantity_minus">-</string>
+    <string name="order_summary">Order Summary</string>
+    <string name="value_of_price">$0</string>
+    <string name="order_button_text">Order</string>
+    <string name="action_settings">Settings</string>
+</resources>

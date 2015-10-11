@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Court Center</string>
+
+    <string name="team_a">Team A</string>
+    <string name="team_a_score">0</string>
+    <string name="team_b">Team B</string>
+    <string name="team_b_score">0</string>
+    <string name="three_points">+3 points</string>
+    <string name="two_points">+2 points</string>
+    <string name="free_throw">Free throw</string>
+    <string name="reset_text">reset</string>
+    <string name="action_settings">Settings</string>
+</resources>

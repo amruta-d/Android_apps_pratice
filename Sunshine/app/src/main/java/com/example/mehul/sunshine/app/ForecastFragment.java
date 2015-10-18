@@ -1,8 +1,11 @@
 package com.example.mehul.sunshine.app;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -12,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -27,8 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -59,35 +61,56 @@ public class ForecastFragment extends Fragment {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_refresh) {
-            FetchWeatherTask fetchWeatherTask = new FetchWeatherTask();
-            fetchWeatherTask.execute("94043,us");
+            updateWeather();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        String [] foreCastArray = {
-                "Today - Sunny - 88/63",
-                "Tomorrow - Foggy - 70/40",
-                "Weds - Cloudy - 72/63",
-                "Thrus - Asteroids - 75/65",
-                "Fri - Heavy Rain - 65/56",
-                "Sat - HELP TRAPPED IN WEATHER STATION - 60/51",
-                "Sun - Sunny - 80/68"
-        };
-        List<String> weekForecast = new ArrayList<String>(Arrays.asList(foreCastArray));
+//        String [] foreCastArray = {
+//                "Today - Sunny - 88/63",
+//                "Tomorrow - Foggy - 70/40",
+//                "Weds - Cloudy - 72/63",
+//                "Thrus - Asteroids - 75/65",
+//                "Fri - Heavy Rain - 65/56",
+//                "Sat - HELP TRAPPED IN WEATHER STATION - 60/51",
+//                "Sun - Sunny - 80/68"
+//        };
+//        List<String> weekForecast = new ArrayList<String>(Arrays.asList(foreCastArray));
        mForecastAdapter = new ArrayAdapter<String>(
-               getActivity(), R.layout.list_item_forecast, R.id.list_item_forecast_textview,weekForecast);
+               getActivity(), R.layout.list_item_forecast, R.id.list_item_forecast_textview,new ArrayList<String>());
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ListView weekForecastListView = (ListView)rootView.findViewById(R.id.listview_forecast);
         weekForecastListView.setAdapter(mForecastAdapter);
+        weekForecastListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String forecast = mForecastAdapter.getItem(position);
+            //    Toast.makeText(getActivity(),forecast,Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(getActivity(),DetailActivity.class).putExtra(Intent.EXTRA_TEXT, forecast);
+                startActivity(intent);
+            }
+        });
 
 
         return rootView;
+    }
+    public void updateWeather(){
+
+        FetchWeatherTask fetchWeatherTask = new FetchWeatherTask();
+//      fetchWeatherTask.execute("94043");
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
+        fetchWeatherTask.execute(location);
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        updateWeather();
     }
 
 
@@ -101,7 +124,16 @@ public class ForecastFragment extends Fragment {
 
         }
 
-        private String formatHighLows(double high, double low){
+        private String formatHighLows(double high, double low, String unitType){
+
+            if(unitType.equals(getString(R.string.pref_units_imperial))){
+                high = (high*1.8)+32;
+                low = (low*1.8)+32;
+            }
+            else if(!unitType.equals(getString(R.string.pref_units_metric))){
+                Log.d(LOG_TAG,"unit type not found!");
+            }
+
             long roundHigh = Math.round(high);
             long roundLow = Math.round(low);
             String highAndLow = roundHigh + "/" + roundLow;
@@ -130,6 +162,10 @@ public class ForecastFragment extends Fragment {
 
             dayTime = new Time();
             String[] resultStrs = new String[numDays];
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String unitType = prefs.getString(getString(R.string.pref_units_key),getString(R.string.pref_units_metric));
+
             for (int i=0; i<weatherArray.length();i++){
                 String day, description, highAndLow;
                 JSONObject dayForecast = weatherArray.getJSONObject(i);
@@ -144,7 +180,7 @@ public class ForecastFragment extends Fragment {
                 JSONObject temperatureObject = dayForecast.getJSONObject(OWM_TEMPERATURE);
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
-                highAndLow = formatHighLows(high,low);
+                highAndLow = formatHighLows(high,low, unitType);
                 resultStrs[i] = day + " - "+ description + " - " + highAndLow;
             }
 
@@ -173,7 +209,7 @@ public class ForecastFragment extends Fragment {
                 // http://openweathermap.org/API#forecast
                 final String FORECAST_BASE_URL =
                         "http://api.openweathermap.org/data/2.5/forecast/daily?";
-                final String QUERY_PARAM = "zip";
+                final String QUERY_PARAM = "q";
                 final String MODE_PARAM = "mode";
                 final String UNITS_PARAM = "units";
                 final String DAYS_PARAM = "cnt";
